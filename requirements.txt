@@ -2,3 +2,4 @@ matplotlib
 wordcloud
 streamlit
 Pillow
+nltk
