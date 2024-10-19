@@ -81,7 +81,7 @@ st.title("Word Cloud Generator")  # Set the title of the Streamlit app.
 st.markdown(
     """
     <h2 style="color:red;">“Turn Words into Art. Simply.”</h2>
-    <p>A beautiful application Created by Arsalan Jamal</p>
+    <h3 style="color:blue;">A beautiful application Created by Arsalan Jamal</p>
     """,
     unsafe_allow_html=True
 )
