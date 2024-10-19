@@ -85,7 +85,7 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
-st.write(<style="font-size:24px;">
+st.write(
     """
     A word cloud is a picture made of words. The bigger the word, the more times it appears in a piece of writing. It's like a summary of what the writing is about, shown in a colorful and easy-to-understand way.
     """
