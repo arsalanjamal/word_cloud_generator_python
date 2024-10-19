@@ -1,118 +1,77 @@
-# Import necessary libraries
-import streamlit as st  # For creating the Streamlit web app
-from wordcloud import WordCloud, STOPWORDS  # For generating word clouds
-import matplotlib.pyplot as plt  # For displaying images
-from PIL import Image  # For image manipulation (masks)
-import os  # For file system operations (optional)
-import numpy as np #For using numpy arrays with masks
+import matplotlib.pyplot as plt
+from wordcloud import WordCloud, STOPWORDS
+import streamlit as st
+from PIL import Image
+import io
+import base64
+from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 
-# Define themes for the word cloud (background color and colormap)
-themes = {
-    "Default": None,  # No specific theme
-    "Ocean": {"background_color": "skyblue", "colormap": "Blues"},  # Blue theme
-    "Sunset": {"background_color": "orange", "colormap": "Reds"},  # Red/Orange theme
-    "Forest": {"background_color": "darkgreen", "colormap": "Greens"},  # Green theme
-    "Night": {"background_color": "black", "colormap": "magma"},  # Dark theme
-    "Pastel": {"background_color": "white", "colormap": "Pastel1"},  # Pastel colors
-    "Dark": {"background_color": "#222222", "colormap": "viridis"},  # Dark gray theme
-    "Vibrant": {"background_color": "white", "colormap": "gist_rainbow"},  # Vibrant colors
-    "Monochrome": {"background_color": "white", "colormap": "gray"},  # Gray scale
-    "Earth": {"background_color": "#663300", "colormap": "terrain"}  # Brown/Green theme
-}
-
-# Define styles for the word cloud (shapes using masks)
-styles = {
-    "Circle": None,  # Default circular shape
-    "Square": {"mask": np.array(Image.open("square_mask.png"))},  # Uses a square mask image
-    "Heart": {"mask": np.array(Image.open("heart_mask.png"))},  # Uses a heart mask image
-    "Cloud": {"mask": np.array(Image.open("cloud_mask.png"))},  # Uses a cloud mask image
-    # Add more styles with different masks as needed
-}
-
-
-def create_wordcloud(text, theme="Default", style="Circle", stopwords=None):
-    """Generates a word cloud image."""
-
-    # Handle stopwords: use default or user-provided
+def create_wordcloud(text, colormap='viridis', stopwords=None, width=800, height=400):
+    """Generates a word cloud image with a header."""
     if stopwords is None:
         stopwords = set(STOPWORDS)
     else:
-        stopwords.update(STOPWORDS)
+        stopwords = stopwords.union(STOPWORDS)
 
-    # Get theme parameters (or defaults)
-    wc_kwargs = themes.get(theme, {})
-    # Get style parameters (or defaults)
-    style_kwargs = styles.get(style, {})
-    # Combine theme and style parameters
-    wc_kwargs.update(style_kwargs)
-
-    # Generate the word cloud
-    wordcloud = WordCloud(**wc_kwargs).generate(text)
-    # Display the word cloud using matplotlib
-    plt.figure(figsize=(10, 8))
-    plt.imshow(wordcloud, interpolation="bilinear")
-    plt.axis("off")
-    return plt  # Return the matplotlib plot
-
-
-def load_text_from_file(file_path):
-    """Loads text from a file, handling potential errors."""
     try:
-        with open(file_path, "r", encoding="utf-8") as file:
-            text = file.read()
-        return text
-    except FileNotFoundError:
-        return "File not found."
+        wordcloud = WordCloud(width=width, height=height - 50,  # Reduced height for header
+                              background_color='white', colormap=colormap,
+                              stopwords=stopwords).generate(text)
+
+        fig = plt.figure(figsize=(10, 8))
+        #Wordcloud
+        ax_wordcloud = fig.add_axes([0, 0.1, 1, 0.9]) #adjust position
+        ax_wordcloud.imshow(wordcloud, interpolation='bilinear')
+        ax_wordcloud.axis('off')
+
+        #Header
+        ax_header = fig.add_axes([0, 0.95, 1, 0.05]) #adjust position
+        ax_header.text(0.5, 0.5, "Created by Arsalan Jamal, Data Analyst", ha='center', va='center', fontsize=12)
+        ax_header.axis('off')
+
+        canvas = FigureCanvas(fig)
+        img = io.BytesIO()
+        canvas.print_png(img)
+        img.seek(0)
+        return img
+
+
     except Exception as e:
         return f"An error occurred: {e}"
 
 
-# Streamlit app code
-import streamlit as st
-import numpy as np
 
-st.title("Word Cloud Generator")  # Set the title of the app
+def download_wordcloud(img, filename="wordcloud.png"):
+    """Saves the word cloud image as a PNG and allows for download."""
+    img.seek(0)
+    b64 = base64.b64encode(img.getvalue()).decode()
+    href = f'<a href="data:image/png;base64,{b64}" download="{filename}">Download WordCloud</a>'
+    return href
 
-uploaded_file = st.file_uploader("Choose a text file", type=["txt"])  # File uploader
 
-if uploaded_file is not None:
-    # Decode the uploaded file (handle potential encoding issues)
-    text = uploaded_file.read().decode("utf-8")
-    text = load_text_from_file(uploaded_file.name)  # Use the error-handling function
+# Streamlit app
+st.title("Word Cloud Generator")
 
-    selected_theme = st.selectbox("Select Theme", list(themes.keys()))  # Theme selection
-    selected_style = st.selectbox("Select Style", list(styles.keys()))  # Style selection
+text = st.text_area("Enter text for word cloud:", height=200)
 
-    if st.button("Generate Word Cloud"):  # Button to trigger word cloud generation
-        # Get custom stop words from user input
-        custom_stopwords = st.text_input("Enter custom stop words (comma-separated):")
-        if custom_stopwords:
-            stopwords = set(custom_stopwords.lower().split(","))
+# Colormap selection
+colormaps = plt.colormaps()
+selected_colormap = st.selectbox("Select Colormap", colormaps)
+
+# Stopwords input
+custom_stopwords_input = st.text_input("Enter custom stop words (comma-separated):")
+custom_stopwords = set()
+if custom_stopwords_input:
+    custom_stopwords = set(word.strip().lower() for word in custom_stopwords_input.split(','))
+
+
+if st.button("Generate Word Cloud"):
+    if text:
+        img = create_wordcloud(text, colormap=selected_colormap, stopwords=custom_stopwords)
+        if isinstance(img, str):  # Error handling
+            st.error(img)
         else:
-            stopwords = None
-
-        # Generate and display the word cloud
-        plt = create_wordcloud(text, selected_theme, selected_style, stopwords)
-        st.pyplot(plt)  # Display the plot in Streamlit
-
-
-# Function to create mask images (you'll need to run this separately or integrate it better)
-from PIL import Image, ImageDraw
-
-def create_mask(shape, size=200):
-    """Creates a mask image with the specified shape and saves it as a PNG."""
-    img = Image.new("RGB", (size, size), "white")  # Create a white image
-    draw = ImageDraw.Draw(img)  # Get a drawing context
-
-    if shape == "square":
-        draw.rectangle([(0, 0), (size, size)], fill="black")  # Draw a black square
-    elif shape == "circle":
-        draw.ellipse([(0, 0), (size, size)], fill="black")  # Draw a black circle
-    # Add more shapes as needed...
-    img.save(f"{shape}_mask.png")  # Save the image as a PNG file
-
-# Example usage:  (Uncomment to generate masks if you don't have them already)
-#create_mask("square")
-#create_mask("circle")
-#create_mask("heart") #You will need to create the heart shape yourself using an image editor or code.
-#create_mask("cloud") #You will need to create the cloud shape yourself using an image editor or code.
+            st.image(img)
+            st.markdown(download_wordcloud(img), unsafe_allow_html=True)
+    else:
+        st.warning("Please enter some text.")
