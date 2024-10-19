@@ -78,7 +78,18 @@ def download_wordcloud(img, filename="wordcloud.png"):
 
 # Streamlit app setup
 st.title("Word Cloud Generator")  # Set the title of the Streamlit app.
-
+st.markdown(
+    """
+    <h2 style="color:red;">“Turn Words into Art. Simply.”</h2>
+    <p>A beautiful application Created by Arsalan Jamal</p>
+    """,
+    unsafe_allow_html=True
+)
+st.write(
+    """
+    A word cloud is a picture made of words. The bigger the word, the more times it appears in a piece of writing. It's like a summary of what the writing is about, shown in a colorful and easy-to-understand way.
+    """
+)
 text = st.text_area("Enter text for word cloud:", height=200)  # Create a text area for user input.
 
 # Colormap selection
