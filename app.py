@@ -38,29 +38,30 @@ def create_wordcloud(text, colormap='viridis', background_color='white', stopwor
         img_pil = Image.open(img)
         draw = ImageDraw.Draw(img_pil)
 
-        try:
-            # Try to use a system font; fallback to a bundled font if not found.
-            font = ImageFont.truetype("arial.ttf", 36) # Replace 'arial.ttf' with a path to a suitable font if needed.
-        except IOError:
-            font = ImageFont.load_default()
+                try:
+            img_pil = Image.open(img)  # Open the image; this might fail if there's a problem with the image data
+            draw = ImageDraw.Draw(img_pil) # Create draw object AFTER successful image opening
 
-        # Calculate watermark position
-        text_width, text_height = draw.textsize("Arsalan Jamal", font=font)
-        x = img_pil.width - text_width - 10
-        y = img_pil.height - text_height - 10
+            try:
+                font = ImageFont.truetype("arial.ttf", 36)
+            except IOError:
+                font = ImageFont.load_default()
 
-        # Add watermark with transparency
-        draw.text((x, y), "Arsalan Jamal", font=font, fill=(0, 0, 0, 128)) #RGBA - last value is alpha (transparency)
+            text_width, text_height = draw.textsize("Arsalan Jamal", font=font)
+            x = img_pil.width - text_width - 10
+            y = img_pil.height - text_height - 10
 
-        # Save the watermarked image back to the buffer
-        img_pil.save(img, "PNG")
-        img.seek(0)
+            draw.text((x, y), "Arsalan Jamal", font=font, fill=(0, 0, 0, 128))
+            img_pil.save(img, "PNG")
+            img.seek(0)
+
+        except Exception as e:
+            return f"An error occurred during watermarking: {e}" #Specific error handling for watermarking
 
         return img
 
     except Exception as e:
         return f"An error occurred: {e}"
-
 def download_wordcloud(img, filename="wordcloud.png"):
     img.seek(0)
     b64 = base64.b64encode(img.getvalue()).decode()
