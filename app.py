@@ -1,71 +1,80 @@
-import matplotlib.pyplot as plt
-from wordcloud import WordCloud, STOPWORDS
-import streamlit as st
-from PIL import Image, ImageDraw, ImageFont
-import io
-import base64
-from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
-import nltk
-from nltk.corpus import stopwords
-nltk.download('stopwords', quiet=True)
+# Import necessary libraries
+import matplotlib.pyplot as plt  # For creating plots and visualizations
+from wordcloud import WordCloud, STOPWORDS  # For generating word clouds; STOPWORDS provides a default list
+import streamlit as st  # For creating interactive web applications
+from PIL import Image  # For image processing (not directly used here, but potentially useful for future enhancements)
+import io  # For working with in-memory binary streams (handling image data)
+import base64  # For encoding binary data into text format (base64), used for creating the download link
+from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas  # Matplotlib function to render figures as images
+import nltk  # For natural language processing tasks, specifically stop word handling
+from nltk.corpus import stopwords  # Provides a list of common English stop words
+nltk.download('stopwords', quiet=True)  # Download stopwords data; quiet=True suppresses download messages
+
 
 def create_wordcloud(text, colormap='viridis', background_color='white', stopwords=None, width=800, height=400):
+    """Generates a word cloud image with a header and customizable background color.
+
+    Args:
+        text (str): The text to generate the word cloud from.
+        colormap (str, optional): The Matplotlib colormap to use. Defaults to 'viridis'.
+        background_color (str, optional): The background color of the word cloud. Defaults to 'white'.
+        stopwords (set, optional): A set of words to exclude from the word cloud. Defaults to None (uses default STOPWORDS).
+        width (int, optional): The width of the word cloud image. Defaults to 800.
+        height (int, optional): The height of the word cloud image. Defaults to 400.
+
+    Returns:
+        io.BytesIO: An in-memory binary stream containing the generated word cloud image, or an error message if an exception occurs.
+    """
+    # Handle stopwords: If no custom stopwords are provided, use the default set. Otherwise, combine custom and default stopwords.
     if stopwords is None:
         stopwords = set(STOPWORDS)
     else:
         stopwords = stopwords.union(STOPWORDS)
 
     try:
-        wordcloud = WordCloud(width=width, height=height - 50,
-                              background_color=background_color, colormap=colormap,
-                              stopwords=stopwords).generate(text)
+        # Create the word cloud object with specified parameters.
+        wordcloud = WordCloud(width=width, height=height - 50,  # Reduced height to accommodate the header.
+                              background_color=background_color, colormap=colormap,  # Set background color and colormap.
+                              stopwords=stopwords).generate(text)  # Generate the word cloud from the input text.
 
+        # Create a Matplotlib figure with two subplots: one for the word cloud and one for the header.
         fig = plt.figure(figsize=(10, 8))
-        ax_wordcloud = fig.add_axes([0, 0.1, 1, 0.9])
-        ax_wordcloud.imshow(wordcloud, interpolation='bilinear')
-        ax_wordcloud.axis('off')
+        # Wordcloud subplot
+        ax_wordcloud = fig.add_axes([0, 0.1, 1, 0.9])  # Define the position and size of the word cloud subplot.
+        ax_wordcloud.imshow(wordcloud, interpolation='bilinear')  # Display the word cloud image.
+        ax_wordcloud.axis('off')  # Hide the axes.
 
-        ax_header = fig.add_axes([0, 0.95, 1, 0.05])
-        ax_header.text(0.5, 0.5, "Created by Arsalan Jamal, Data Analyst", ha='center', va='center', fontsize=12)
-        ax_header.axis('off')
+        # Header subplot
+        ax_header = fig.add_axes([0, 0.95, 1, 0.05])  # Define the position and size of the header subplot.
+        ax_header.text(0.5, 0.5, "Created by Arsalan Jamal, Data Analyst", ha='center', va='center', fontsize=12)  # Add the header text.
+        ax_header.axis('off')  # Hide the axes.
 
+        # Render the figure to an in-memory buffer.
         canvas = FigureCanvas(fig)
         img = io.BytesIO()
         canvas.print_png(img)
-        img.seek(0)
-
-        # --- Watermark Addition ---
-        try:
-            img_pil = Image.open(img)
-            draw = ImageDraw.Draw(img_pil)
-
-            try:
-                font = ImageFont.truetype("arial.ttf", 36)
-            except IOError:
-                font = ImageFont.load_default()
-
-            text_width, text_height = draw.textsize("Arsalan Jamal", font=font)
-            x = img_pil.width - text_width - 10
-            y = img_pil.height - text_height - 10
-
-            draw.text((x, y), "Arsalan Jamal", font=font, fill=(0, 0, 0, 128))
-            img_pil.save(img, "PNG")
-            img.seek(0)
-
-        except Exception as e:
-            return f"An error occurred during watermarking: {e}"
-
-        return img
+        img.seek(0)  # Reset the stream pointer to the beginning of the buffer.
+        return img  # Return the image data as a BytesIO object.
 
     except Exception as e:
-        return f"An error occurred: {e}"
-def download_wordcloud(img, filename="wordcloud.png"):
-    img.seek(0)
-    b64 = base64.b64encode(img.getvalue()).decode()
-    href = f'<a href="data:image/png;base64,{b64}" download="{filename}">Download WordCloud</a>'
-    return href
+        return f"An error occurred: {e}"  # Return an error message if any exception occurs during word cloud generation.
 
-# ... (Rest of your Streamlit code remains the same) ...
+
+def download_wordcloud(img, filename="wordcloud.png"):
+    """Creates a download link for the generated word cloud image.
+
+    Args:
+        img (io.BytesIO): The image data as a BytesIO object.
+        filename (str, optional): The desired filename for the downloaded image. Defaults to "wordcloud.png".
+
+    Returns:
+        str: An HTML link for downloading the image.
+    """
+    img.seek(0)  # Reset the stream pointer to the beginning.
+    b64 = base64.b64encode(img.getvalue()).decode()  # Encode the image data to base64 for embedding in the HTML link.
+    href = f'<a href="data:image/png;base64,{b64}" download="{filename}">Download WordCloud</a>'  # Create an HTML link for downloading the image.
+    return href  # Return the HTML link.
+
 
 # Streamlit app setup
 st.title("Word Cloud Generator")  # Set the title of the Streamlit app.
