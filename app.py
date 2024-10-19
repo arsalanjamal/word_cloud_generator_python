@@ -35,12 +35,9 @@ def create_wordcloud(text, colormap='viridis', background_color='white', stopwor
         img.seek(0)
 
         # --- Watermark Addition ---
-        img_pil = Image.open(img)
-        draw = ImageDraw.Draw(img_pil)
-
-                try:
-            img_pil = Image.open(img)  # Open the image; this might fail if there's a problem with the image data
-            draw = ImageDraw.Draw(img_pil) # Create draw object AFTER successful image opening
+        try:
+            img_pil = Image.open(img)
+            draw = ImageDraw.Draw(img_pil)
 
             try:
                 font = ImageFont.truetype("arial.ttf", 36)
@@ -56,7 +53,7 @@ def create_wordcloud(text, colormap='viridis', background_color='white', stopwor
             img.seek(0)
 
         except Exception as e:
-            return f"An error occurred during watermarking: {e}" #Specific error handling for watermarking
+            return f"An error occurred during watermarking: {e}"
 
         return img
 
